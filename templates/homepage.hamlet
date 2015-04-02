@@ -11,6 +11,11 @@
       <tr>
         <td>#{title}
         <td>#{formatTime defaultTimeLocale "%b %d, %Y" published}
-        <td>#{authorName}
+        $maybe name <- authorName
+          <td>#{name}
+        $nothing
+          <td>
+            <i>Anon
+
 
 <a.btn.btn-default href=@{NewPostR}>New Post

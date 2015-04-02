@@ -7,7 +7,7 @@ import Yesod.Form.Bootstrap3
 import Database.Esqueleto
 
 
-postForm :: UserId -> UTCTime -> Form Post
+postForm :: Maybe UserId -> UTCTime -> Form Post
 postForm userId now = renderBootstrap3 layout $ Post
   <$> areq textField "Title" Nothing
   <*> areq textareaField "Body" Nothing
@@ -30,19 +30,19 @@ getHomeR = do
     $(widgetFile "homepage")
   where
     postsWithUserData = select $
-      from $ \(post `InnerJoin` author) -> do
-        on $ post ^. PostAuthorId ==. author ^. UserId
+      from $ \(post `LeftOuterJoin` author) -> do
+        on $ post ^. PostAuthorId ==. author ?. UserId
         return
           ( post ^. PostId
           , post ^. PostTitle
           , post ^. PostPublishedAt
-          , author ^. UserIdent
+          , author ?. UserIdent
           )
 
 
 getNewPostR :: Handler Html
 getNewPostR = do
-  userId <- requireAuthId
+  userId <- maybeAuthId
   now <- liftIO getCurrentTime
   (formWidget, formEnctype) <- generateFormPost $ postForm userId now
   defaultLayout $ do
@@ -52,14 +52,20 @@ getNewPostR = do
 
 postPostsR :: Handler Html
 postPostsR = do
-  userId <- requireAuthId
+  userId <- maybeAuthId
   now <- liftIO getCurrentTime
   ((result, formWidget), formEnctype) <- runFormPost $ postForm userId now
   case result of
     FormSuccess post -> do
       postId <- runDB $ insert post
       setMessage "Post created"
-      redirect HomeR
+      redirect $ PostR postId
     _ -> defaultLayout $ do
         setTitle "New Post"
         $(widgetFile "posts/new")
+
+getPostR :: PostId -> Handler TypedContent
+getPostR postId = do
+  post <- runDB $ get404 postId
+  defaultLayout $ do
+    $(widgetFile "posts/show")

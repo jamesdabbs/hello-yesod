@@ -6,5 +6,6 @@
 
 / HomeR GET
 
-/posts/new NewPostR GET
+!/posts/new NewPostR GET
+/posts/#PostId PostR GET
 /posts PostsR POST

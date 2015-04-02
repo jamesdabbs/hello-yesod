@@ -14,5 +14,5 @@ Email
 Post
   title Text
   body Textarea
-  authorId UserId
+  authorId UserId Maybe
   publishedAt UTCTime default=now()
